@@ -1,0 +1,38 @@
+name: Deploy Backend to Railway
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-backend:
+    name: Deploy backend and run migrations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (for Railway CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Railway CLI
+        run: npm install -g railway
+
+      - name: Deploy backend to Railway
+        working-directory: backend-socialbooster-demo
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway login --token "$RAILWAY_TOKEN"
+          # Deploy the service from the backend directory (non-interactive)
+          railway up --detach || true
+
+      - name: Run migrations on Railway
+        working-directory: backend-socialbooster-demo
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway login --token "$RAILWAY_TOKEN"
+          railway run python manage.py migrate || true
